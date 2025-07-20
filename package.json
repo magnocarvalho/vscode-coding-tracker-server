@@ -13,7 +13,9 @@
     "start": "node ./app",
     "server": "node ./app",
     "install-git-hooks": "cp ./utilities/git-pre-commit-hook.sh ./.git/hooks/pre-commit -vf",
-    "new-version": "bash ./utilities/new-version-tag.sh"
+    "new-version": "bash ./utilities/new-version-tag.sh",
+    "setup-database": "node ./setup-database.js",
+    "migrate-to-postgres": "node ./migrate-to-postgres.js ./database"
   },
   "bin": {
     "coding-tracker-server": "app.js"
@@ -32,10 +34,14 @@
     "body-parser": "^1.18.3",
     "colors": "^1.2.5",
     "commander": "^2.15.1",
+    "dotenv": "^8.6.0",
     "express": "^4.16.3",
     "fs-extra": "^4.0.3",
     "morgan": "^1.9.1",
-    "serve-favicon": "^2.5.0"
+    "pg": "^8.8.0",
+    "reflect-metadata": "^0.1.13",
+    "serve-favicon": "^2.5.0",
+    "typeorm": "^0.2.45"
   },
   "devDependencies": {
     "@hangxingliu/assert": "^0.1.1",
@@ -69,10 +75,10 @@
     "html-minifier": "^3.5.15",
     "lodash": "^4.17.11",
     "mocha": "^4.0.1",
-    "node-sass": "^4.9.4",
     "postcss": "^6.0.22",
     "pug": "^2.0.3",
     "request": "^2.87.0",
+    "sass": "^1.89.2",
     "tree-kill": "^1.2.0",
     "typescript": "^2.7.2",
     "watch": "^1.0.2",
