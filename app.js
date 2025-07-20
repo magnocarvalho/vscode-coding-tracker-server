@@ -27,7 +27,7 @@ var Express = require('express'),
 var log = require('./lib/Log'),
 	version = require('./lib/Version'),
 	welcome = require('./lib/Welcome'),
-	storage = require('./lib/Storage'),
+	storage = require('./lib/StorageAdapter'),
 	checkParams = require('./lib/ParamsChecker'),
 	errorHandler = require('./lib/Handler404and500'),
 	tokenMiddleware = require('./lib/TokenMiddleware'),
@@ -47,7 +47,17 @@ const needUploadToken = tokenMiddleware.getMiddleware('upload');
 const needAdminToken = tokenMiddleware.getMiddleware('admin');
 
 //Init Storage
-storage.init(cliArgs.output);
+async function initializeStorage() {
+	try {
+		await storage.init(cliArgs.output);
+		log.success('Storage inicializado com sucesso');
+	} catch (error) {
+		log.error('Erro ao inicializar storage:', error.message);
+		process.exit(1);
+	}
+}
+
+initializeStorage();
 
 //Using body parser to analyze upload data
 app.use(require('body-parser').urlencoded({ extended: false }));
@@ -74,6 +84,16 @@ if (global.DEBUG) {
 //Return timezone offset in server
 const TZ_OFFSET = new Date().getTimezoneOffset();
 app.use('/ajax/tz-offset', (req, res) => res.json({ timezoneOffset: TZ_OFFSET}).end());
+
+// PostgreSQL Report Endpoints V3
+const storageAdapter = require('./lib/StorageAdapter');
+if (storageAdapter.isUsingPostgres()) {
+	const reporterV3 = require('./lib/analyze/ReportMiddlewareV3');
+	app.use('/ajax/report-v3', needViewReportToken, reporterV3.middleware);
+	app.use('/ajax/statistics', needViewReportToken, reporterV3.statisticsMiddleware);
+	app.use('/ajax/filters', needViewReportToken, reporterV3.filtersMiddleware);
+	log.info('Endpoints PostgreSQL V3 ativados');
+}
 
 /// @deprecated ReportMiddleware is deprecated now.
 ///   Please use /ajax/report-v2 interface.
@@ -148,3 +168,26 @@ function afterServerStarted() {
 		`Token count           : ${tokenMiddleware.getTokenCountString()}\n` +
 		`-------------------`);
 }
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+	log.info('Recebido SIGINT, fazendo shutdown graceful...');
+	try {
+		await storage.disconnect();
+		log.success('Storage desconectado com sucesso');
+	} catch (error) {
+		log.error('Erro ao desconectar storage:', error.message);
+	}
+	process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+	log.info('Recebido SIGTERM, fazendo shutdown graceful...');
+	try {
+		await storage.disconnect();
+		log.success('Storage desconectado com sucesso');
+	} catch (error) {
+		log.error('Erro ao desconectar storage:', error.message);
+	}
+	process.exit(0);
+});

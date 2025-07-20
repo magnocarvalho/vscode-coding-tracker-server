@@ -1,6 +1,6 @@
 {
   "name": "vscode-coding-tracker-server",
-  "version": "0.7.0-dev",
+  "version": "0.8.0-dev",
   "description": "Visual Studio Code Coding Tracker Server Script",
   "main": "app.js",
   "scripts": {
